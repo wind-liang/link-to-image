@@ -16,23 +16,23 @@ const STYLE_CONFIGS = {
     titleFont: 'bold 18px "Microsoft YaHei"',
     descriptionFont: '14px "Microsoft YaHei"',
     qrSize: 82,
-    border: { r: 226, g: 232, b: 240, alpha: 0.6 },
+    border: { r: 229, g: 231, b: 235, alpha: 1 },
     qrStyle: {
       dark: '#1F2937',
       light: '#FFFFFF',
       border: { r: 255, g: 255, b: 255 },
-      padding: 4,
+      padding: 2,
       tipText: '长按或扫码访问',
       tipColor: '#6B7280',
     },
     layout: {
-      titleX: 25,
+      titleX: 20,
       titleY: 35,
-      descriptionX: 25,
+      descriptionX: 20,
       descriptionY: 65,
       descriptionLineHeight: 20,
-      qrRightPadding: 25,
-      qrTopPadding: 8,
+      qrRightPadding: 20,
+      qrTopPadding: 12,
       tipSpacing: 2,
     }
   },
@@ -50,18 +50,18 @@ const STYLE_CONFIGS = {
       dark: '#FFFFFF',
       light: '#07C160',
       border: { r: 7, g: 193, b: 96 },
-      padding: 4,
+      padding: 2,
       tipText: '长按或扫码访问',
       tipColor: 'rgba(255, 255, 255, 0.9)',
     },
     layout: {
-      titleX: 25,
+      titleX: 20,
       titleY: 35,
-      descriptionX: 25,
+      descriptionX: 20,
       descriptionY: 65,
       descriptionLineHeight: 20,
-      qrRightPadding: 25,
-      qrTopPadding: 8,
+      qrRightPadding: 20,
+      qrTopPadding: 12,
       tipSpacing: 2,
     }
   },
@@ -156,7 +156,10 @@ export async function POST(request: NextRequest) {
 
       // 创建主画布
       console.log('Creating main canvas...')
-      const canvas = createCanvas(styleConfig.width * scale, styleConfig.height * scale)
+      // 为边框预留空间
+      const canvasWidth = style === 'white' ? styleConfig.width * scale + 2 : styleConfig.width * scale
+      const canvasHeight = style === 'white' ? styleConfig.height * scale + 2 : styleConfig.height * scale
+      const canvas = createCanvas(canvasWidth, canvasHeight)
       const ctx = canvas.getContext('2d')
       
       // 缩放画布以适应更高分辨率
@@ -165,12 +168,13 @@ export async function POST(request: NextRequest) {
       // 启用字体平滑
       ctx.imageSmoothingEnabled = true
       
-      // 绘制背景
-      ctx.fillStyle = `rgb(${styleConfig.background.r}, ${styleConfig.background.g}, ${styleConfig.background.b})`
-      ctx.fillRect(0, 0, styleConfig.width, styleConfig.height)
+      // 如果是白色风格，先平移画布以预留边框空间
+      if (style === 'white') {
+        ctx.translate(1/scale, 1/scale)
+      }
       
-      // 绘制圆角矩形
-      const radius = 8
+      // 绘制背景和边框
+      const radius = 6 // 更自然的圆角大小
       ctx.beginPath()
       ctx.moveTo(radius, 0)
       ctx.lineTo(styleConfig.width - radius, 0)
@@ -182,6 +186,22 @@ export async function POST(request: NextRequest) {
       ctx.lineTo(0, radius)
       ctx.quadraticCurveTo(0, 0, radius, 0)
       ctx.closePath()
+
+      // 如果是白色风格，绘制边框
+      if (style === 'white') {
+        ctx.save()
+        ctx.strokeStyle = `rgb(${styleConfig.border.r}, ${styleConfig.border.g}, ${styleConfig.border.b})`
+        ctx.lineWidth = 1/scale
+        ctx.stroke()
+        ctx.restore()
+      }
+
+      // 填充背景色
+      ctx.fillStyle = `rgb(${styleConfig.background.r}, ${styleConfig.background.g}, ${styleConfig.background.b})`
+      ctx.fill()
+      
+      // 创建裁剪路径
+      ctx.save()
       ctx.clip()
       
       // 绘制标题
@@ -227,12 +247,28 @@ export async function POST(request: NextRequest) {
       const qrX = styleConfig.width - styleConfig.qrSize - styleConfig.layout.qrRightPadding
       const qrY = styleConfig.layout.qrTopPadding
       
-      // 绘制二维码背景
+      // 绘制二维码背景和边框
+      ctx.save()
       ctx.fillStyle = styleConfig.qrStyle.light
-      ctx.fillRect(qrX - styleConfig.qrStyle.padding, qrY - styleConfig.qrStyle.padding, 
-                  styleConfig.qrSize + styleConfig.qrStyle.padding * 2, 
-                  styleConfig.qrSize + styleConfig.qrStyle.padding * 2)
-      
+      const qrBgSize = styleConfig.qrSize + styleConfig.qrStyle.padding * 2
+      const qrBgX = qrX - styleConfig.qrStyle.padding
+      const qrBgY = qrY - styleConfig.qrStyle.padding
+      // 绘制二维码背景圆角矩形
+      const qrBgRadius = 4
+      ctx.beginPath()
+      ctx.moveTo(qrBgX + qrBgRadius, qrBgY)
+      ctx.lineTo(qrBgX + qrBgSize - qrBgRadius, qrBgY)
+      ctx.quadraticCurveTo(qrBgX + qrBgSize, qrBgY, qrBgX + qrBgSize, qrBgY + qrBgRadius)
+      ctx.lineTo(qrBgX + qrBgSize, qrBgY + qrBgSize - qrBgRadius)
+      ctx.quadraticCurveTo(qrBgX + qrBgSize, qrBgY + qrBgSize, qrBgX + qrBgSize - qrBgRadius, qrBgY + qrBgSize)
+      ctx.lineTo(qrBgX + qrBgRadius, qrBgY + qrBgSize)
+      ctx.quadraticCurveTo(qrBgX, qrBgY + qrBgSize, qrBgX, qrBgY + qrBgSize - qrBgRadius)
+      ctx.lineTo(qrBgX, qrBgY + qrBgRadius)
+      ctx.quadraticCurveTo(qrBgX, qrBgY, qrBgX + qrBgRadius, qrBgY)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+
       // 绘制二维码
       ctx.drawImage(qrImage, qrX, qrY, styleConfig.qrSize, styleConfig.qrSize)
       
@@ -242,7 +278,10 @@ export async function POST(request: NextRequest) {
       ctx.textAlign = 'center'
       ctx.fillText(styleConfig.qrStyle.tipText, 
                   qrX + styleConfig.qrSize / 2, 
-                  qrY + styleConfig.qrSize + styleConfig.qrStyle.padding + 16)
+                  qrY + styleConfig.qrSize + styleConfig.qrStyle.padding + 14)
+
+      // 恢复裁剪路径
+      ctx.restore()
 
       // 转换为图片
       console.log('Converting to image...')
