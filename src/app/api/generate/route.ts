@@ -293,6 +293,8 @@ export async function POST(request: NextRequest) {
       return new NextResponse(finalImage, {
         headers: {
           'Content-Type': 'image/png',
+          'X-Page-Title': Buffer.from(title).toString('base64'),
+          'X-Page-Description': Buffer.from(description).toString('base64'),
         },
       })
     } catch (innerError) {

@@ -78,6 +78,20 @@ export default function Home() {
         throw new Error(data.error || '生成图片时出错')
       }
 
+      // 获取标题和描述
+      const titleHeader = response.headers.get('X-Page-Title')
+      const descriptionHeader = response.headers.get('X-Page-Description')
+
+      // 如果没有自定义标题和描述，则使用从服务器获取的值
+      if (!customTitle && titleHeader) {
+        const decodedTitle = Buffer.from(titleHeader, 'base64').toString()
+        setCustomTitle(decodedTitle)
+      }
+      if (!customDescription && descriptionHeader) {
+        const decodedDescription = Buffer.from(descriptionHeader, 'base64').toString()
+        setCustomDescription(decodedDescription)
+      }
+
       const blob = await response.blob()
       const objectUrl = URL.createObjectURL(blob)
       setImageUrl(objectUrl)
