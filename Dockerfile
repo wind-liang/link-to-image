@@ -9,10 +9,10 @@ COPY package*.json ./
 
 RUN npm config set registry https://registry.npmmirror.com/
 
-# 安装 Python 和构建工具
+# 安装 Python 3 和构建工具
 RUN apk add --no-cache \
-    python2 \
-    py2-pip \
+    python3 \
+    py3-pip \
     build-base \
     bash
 
