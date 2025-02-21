@@ -14,6 +14,12 @@ RUN apk add --no-cache \
     python3 \
     py3-pip \
     build-base \
+    cairo-dev \
+    pango-dev \
+    gdk-pixbuf-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev \
     bash
 
 # 安装依赖
