@@ -9,10 +9,13 @@ COPY package*.json ./
 
 RUN npm config set registry https://registry.npmmirror.com/
 
-# 安装 EPEL 仓库以及 Python 和构建工具
-RUN yum -y groupinstall "Development Tools" && \
-    yum -y install python2
-    
+# 安装 Python 和构建工具
+RUN apk add --no-cache \
+    python2 \
+    py2-pip \
+    build-base \
+    bash
+
 # 安装依赖
 RUN npm install
 
