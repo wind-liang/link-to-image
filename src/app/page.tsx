@@ -207,6 +207,9 @@ export default function Home() {
                     setUrl(e.target.value);
                     // 清除之前的错误信息
                     setError('');
+                    // 清空标题和描述
+                    setCustomTitle('');
+                    setCustomDescription('');
                   }}
                   required
                   placeholder="https://example.com"
