@@ -313,14 +313,13 @@ export default function Home() {
             <div className="mt-8">
               <h2 className="text-lg font-medium text-gray-900 mb-4">生成的图片：</h2>
               <div className="relative bg-gray-50 rounded-lg p-4 sm:p-8 border border-gray-100">
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden mx-auto max-w-full" style={{ width: '500px', height: '120px' }}>
+                <div className="bg-white rounded-lg shadow-sm overflow-hidden mx-auto">
                   <img
                     src={imageUrl}
                     alt="生成的图片"
-                    className="w-full h-full"
+                    className="w-full h-auto max-w-full"
                     style={{
                       imageRendering: 'crisp-edges',
-                      objectFit: 'contain',
                     }}
                   />
                 </div>
