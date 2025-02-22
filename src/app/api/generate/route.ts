@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { chromium } from 'playwright'
 import QRCode from 'qrcode'
 import sharp from 'sharp'
 import { createCanvas } from 'canvas'
 import { loadImage } from 'canvas'
+import * as cheerio from 'cheerio'
 
 // 定义样式配置
 const STYLE_CONFIGS = {
@@ -69,6 +69,37 @@ const STYLE_CONFIGS = {
   },
 }
 
+// 获取网页信息的函数
+async function getPageInfo(url: string) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    
+    const title = $('title').text() || '未能获取网页标题';
+    const description = $('meta[name="description"]').attr('content') || 
+                       $('meta[property="og:description"]').attr('content') || 
+                       '未能获取网页描述';
+    
+    return { title, description };
+  } catch (error) {
+    console.error('Error fetching page info:', error);
+    return {
+      title: '未能访问的网页',
+      description: '该网页暂时无法访问，您可以点击上方的"自定义标题和描述"来编辑显示内容'
+    };
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { url, style = 'modern', customTitle, customDescription } = await request.json()
@@ -107,202 +138,174 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    try {
-      // 获取样式配置
-      const styleConfig = STYLE_CONFIGS[style as keyof typeof STYLE_CONFIGS]
+    // 获取样式配置
+    const styleConfig = STYLE_CONFIGS[style as keyof typeof STYLE_CONFIGS]
 
-      // 启动浏览器并抓取网页信息
-      console.log('Launching browser...')
-      const browser = await chromium.launch()
-      const page = await browser.newPage()
-      
-      let title = customTitle
-      let description = customDescription
-      
-      try {
-        console.log('Navigating to URL:', url)
-        // 设置页面加载超时时间为 10 秒
-        await page.goto(url, { timeout: 10000 })
-        
-        // 如果没有自定义标题和描述，则尝试从网页获取
-        if (!customTitle) {
-          title = await page.title() || '未能获取网页标题'
-        }
-        if (!customDescription) {
-          description = await page.$eval(
-            'meta[name="description"]',
-            (el) => el.getAttribute('content') || ''
-          ).catch(() => '未能获取网页描述')
-        }
-      } catch (err) {
-        console.log('Failed to fetch page info:', err)
-        // 设置默认值
-        if (!title) title = '未能访问的网页'
-        if (!description) description = '该网页暂时无法访问，您可以点击上方的"自定义标题和描述"来编辑显示内容'
-      } finally {
-        await browser.close()
-        console.log('Browser closed')
-      }
-
-      // 生成二维码
-      console.log('Generating QR code...')
-      const scale = 2 // 增加分辨率
-      const qrCodeDataUrl = await QRCode.toDataURL(url, {
-        width: styleConfig.qrSize * scale,
-        margin: 0,
-        color: {
-          dark: styleConfig.qrStyle.dark,
-          light: styleConfig.qrStyle.light,
-        },
-      })
-
-      // 创建主画布
-      console.log('Creating main canvas...')
-      // 为边框预留空间
-      const canvasWidth = style === 'white' ? styleConfig.width * scale + 2 : styleConfig.width * scale
-      const canvasHeight = style === 'white' ? styleConfig.height * scale + 2 : styleConfig.height * scale
-      const canvas = createCanvas(canvasWidth, canvasHeight)
-      const ctx = canvas.getContext('2d')
-      
-      // 缩放画布以适应更高分辨率
-      ctx.scale(scale, scale)
-      
-      // 启用字体平滑
-      ctx.imageSmoothingEnabled = true
-      
-      // 如果是白色风格，先平移画布以预留边框空间
-      if (style === 'white') {
-        ctx.translate(1/scale, 1/scale)
-      }
-      
-      // 绘制背景和边框
-      const radius = 6 // 更自然的圆角大小
-      ctx.beginPath()
-      ctx.moveTo(radius, 0)
-      ctx.lineTo(styleConfig.width - radius, 0)
-      ctx.quadraticCurveTo(styleConfig.width, 0, styleConfig.width, radius)
-      ctx.lineTo(styleConfig.width, styleConfig.height - radius)
-      ctx.quadraticCurveTo(styleConfig.width, styleConfig.height, styleConfig.width - radius, styleConfig.height)
-      ctx.lineTo(radius, styleConfig.height)
-      ctx.quadraticCurveTo(0, styleConfig.height, 0, styleConfig.height - radius)
-      ctx.lineTo(0, radius)
-      ctx.quadraticCurveTo(0, 0, radius, 0)
-      ctx.closePath()
-
-      // 如果是白色风格，绘制边框
-      if (style === 'white') {
-        ctx.save()
-        ctx.strokeStyle = `rgb(${styleConfig.border.r}, ${styleConfig.border.g}, ${styleConfig.border.b})`
-        ctx.lineWidth = 1/scale
-        ctx.stroke()
-        ctx.restore()
-      }
-
-      // 填充背景色
-      ctx.fillStyle = `rgb(${styleConfig.background.r}, ${styleConfig.background.g}, ${styleConfig.background.b})`
-      ctx.fill()
-      
-      // 创建裁剪路径
-      ctx.save()
-      ctx.clip()
-      
-      // 绘制标题
-      ctx.font = styleConfig.titleFont
-      ctx.fillStyle = styleConfig.titleColor
-      const titleMaxWidth = styleConfig.width - styleConfig.qrSize - styleConfig.layout.qrRightPadding * 3
-      let titleText = title
-      if (ctx.measureText(title).width > titleMaxWidth) {
-        let i = 0
-        while (ctx.measureText(title.slice(0, i) + '...').width < titleMaxWidth && i < title.length) {
-          i++
-        }
-        titleText = title.slice(0, i - 1) + '...'
-      }
-      ctx.fillText(titleText, styleConfig.layout.titleX, styleConfig.layout.titleY)
-      
-      // 绘制描述文本
-      ctx.font = styleConfig.descriptionFont
-      ctx.fillStyle = styleConfig.descriptionColor
-      const wrappedDescription = wrapText(ctx as unknown as CanvasRenderingContext2D, description, titleMaxWidth)
-      wrappedDescription.forEach((line, i) => {
-        if (i < 2) {
-          ctx.fillText(line, styleConfig.layout.descriptionX, styleConfig.layout.descriptionY + i * styleConfig.layout.descriptionLineHeight)
-        } else if (i === 2) {
-          let lastLine = line
-          if (wrappedDescription.length > 3) {
-            if (ctx.measureText(lastLine + '...').width > titleMaxWidth) {
-              let i = lastLine.length
-              while (ctx.measureText(lastLine.slice(0, i) + '...').width > titleMaxWidth) {
-                i--
-              }
-              lastLine = lastLine.slice(0, i) + '...'
-            } else {
-              lastLine = line + '...'
-            }
-          }
-          ctx.fillText(lastLine, styleConfig.layout.descriptionX, styleConfig.layout.descriptionY + i * styleConfig.layout.descriptionLineHeight)
-        }
-      })
-
-      // 加载二维码图片
-      const qrImage = await loadImage(qrCodeDataUrl)
-      const qrX = styleConfig.width - styleConfig.qrSize - styleConfig.layout.qrRightPadding
-      const qrY = styleConfig.layout.qrTopPadding
-      
-      // 绘制二维码背景和边框
-      ctx.save()
-      ctx.fillStyle = styleConfig.qrStyle.light
-      const qrBgSize = styleConfig.qrSize + styleConfig.qrStyle.padding * 2
-      const qrBgX = qrX - styleConfig.qrStyle.padding
-      const qrBgY = qrY - styleConfig.qrStyle.padding
-      // 绘制二维码背景圆角矩形
-      const qrBgRadius = 4
-      ctx.beginPath()
-      ctx.moveTo(qrBgX + qrBgRadius, qrBgY)
-      ctx.lineTo(qrBgX + qrBgSize - qrBgRadius, qrBgY)
-      ctx.quadraticCurveTo(qrBgX + qrBgSize, qrBgY, qrBgX + qrBgSize, qrBgY + qrBgRadius)
-      ctx.lineTo(qrBgX + qrBgSize, qrBgY + qrBgSize - qrBgRadius)
-      ctx.quadraticCurveTo(qrBgX + qrBgSize, qrBgY + qrBgSize, qrBgX + qrBgSize - qrBgRadius, qrBgY + qrBgSize)
-      ctx.lineTo(qrBgX + qrBgRadius, qrBgY + qrBgSize)
-      ctx.quadraticCurveTo(qrBgX, qrBgY + qrBgSize, qrBgX, qrBgY + qrBgSize - qrBgRadius)
-      ctx.lineTo(qrBgX, qrBgY + qrBgRadius)
-      ctx.quadraticCurveTo(qrBgX, qrBgY, qrBgX + qrBgRadius, qrBgY)
-      ctx.closePath()
-      ctx.fill()
-      ctx.restore()
-
-      // 绘制二维码
-      ctx.drawImage(qrImage, qrX, qrY, styleConfig.qrSize, styleConfig.qrSize)
-      
-      // 绘制提示文字
-      ctx.font = styleConfig.qrStyle.tipFont
-      ctx.fillStyle = styleConfig.qrStyle.tipColor
-      ctx.textAlign = 'center'
-      ctx.fillText(styleConfig.qrStyle.tipText, 
-                  qrX + styleConfig.qrSize / 2, 
-                  qrY + styleConfig.qrSize + styleConfig.qrStyle.padding + 14)
-
-      // 恢复裁剪路径
-      ctx.restore()
-
-      // 转换为图片
-      console.log('Converting to image...')
-      const finalImage = await sharp(canvas.toBuffer('image/png'))
-        .png()
-        .toBuffer()
-
-      console.log('Image generation completed')
-      return new NextResponse(finalImage, {
-        headers: {
-          'Content-Type': 'image/png',
-          'X-Page-Title': Buffer.from(title).toString('base64'),
-          'X-Page-Description': Buffer.from(description).toString('base64'),
-        },
-      })
-    } catch (innerError) {
-      console.error('Error details:', innerError)
-      throw innerError
+    // 获取网页信息
+    let title = customTitle;
+    let description = customDescription;
+    
+    if (!customTitle || !customDescription) {
+      const pageInfo = await getPageInfo(url);
+      if (!customTitle) title = pageInfo.title;
+      if (!customDescription) description = pageInfo.description;
     }
+
+    // 生成二维码
+    console.log('Generating QR code...')
+    const scale = 2 // 增加分辨率
+    const qrCodeDataUrl = await QRCode.toDataURL(url, {
+      width: styleConfig.qrSize * scale,
+      margin: 0,
+      color: {
+        dark: styleConfig.qrStyle.dark,
+        light: styleConfig.qrStyle.light,
+      },
+    })
+
+    // 创建主画布
+    console.log('Creating main canvas...')
+    // 为边框预留空间
+    const canvasWidth = style === 'white' ? styleConfig.width * scale + 2 : styleConfig.width * scale
+    const canvasHeight = style === 'white' ? styleConfig.height * scale + 2 : styleConfig.height * scale
+    const canvas = createCanvas(canvasWidth, canvasHeight)
+    const ctx = canvas.getContext('2d')
+    
+    // 缩放画布以适应更高分辨率
+    ctx.scale(scale, scale)
+    
+    // 启用字体平滑
+    ctx.imageSmoothingEnabled = true
+    
+    // 如果是白色风格，先平移画布以预留边框空间
+    if (style === 'white') {
+      ctx.translate(1/scale, 1/scale)
+    }
+    
+    // 绘制背景和边框
+    const radius = 6 // 更自然的圆角大小
+    ctx.beginPath()
+    ctx.moveTo(radius, 0)
+    ctx.lineTo(styleConfig.width - radius, 0)
+    ctx.quadraticCurveTo(styleConfig.width, 0, styleConfig.width, radius)
+    ctx.lineTo(styleConfig.width, styleConfig.height - radius)
+    ctx.quadraticCurveTo(styleConfig.width, styleConfig.height, styleConfig.width - radius, styleConfig.height)
+    ctx.lineTo(radius, styleConfig.height)
+    ctx.quadraticCurveTo(0, styleConfig.height, 0, styleConfig.height - radius)
+    ctx.lineTo(0, radius)
+    ctx.quadraticCurveTo(0, 0, radius, 0)
+    ctx.closePath()
+
+    // 如果是白色风格，绘制边框
+    if (style === 'white') {
+      ctx.save()
+      ctx.strokeStyle = `rgb(${styleConfig.border.r}, ${styleConfig.border.g}, ${styleConfig.border.b})`
+      ctx.lineWidth = 1/scale
+      ctx.stroke()
+      ctx.restore()
+    }
+
+    // 填充背景色
+    ctx.fillStyle = `rgb(${styleConfig.background.r}, ${styleConfig.background.g}, ${styleConfig.background.b})`
+    ctx.fill()
+    
+    // 创建裁剪路径
+    ctx.save()
+    ctx.clip()
+    
+    // 绘制标题
+    ctx.font = styleConfig.titleFont
+    ctx.fillStyle = styleConfig.titleColor
+    const titleMaxWidth = styleConfig.width - styleConfig.qrSize - styleConfig.layout.qrRightPadding * 3
+    let titleText = title
+    if (ctx.measureText(title).width > titleMaxWidth) {
+      let i = 0
+      while (ctx.measureText(title.slice(0, i) + '...').width < titleMaxWidth && i < title.length) {
+        i++
+      }
+      titleText = title.slice(0, i - 1) + '...'
+    }
+    ctx.fillText(titleText, styleConfig.layout.titleX, styleConfig.layout.titleY)
+    
+    // 绘制描述文本
+    ctx.font = styleConfig.descriptionFont
+    ctx.fillStyle = styleConfig.descriptionColor
+    const wrappedDescription = wrapText(ctx as unknown as CanvasRenderingContext2D, description, titleMaxWidth)
+    wrappedDescription.forEach((line, i) => {
+      if (i < 2) {
+        ctx.fillText(line, styleConfig.layout.descriptionX, styleConfig.layout.descriptionY + i * styleConfig.layout.descriptionLineHeight)
+      } else if (i === 2) {
+        let lastLine = line
+        if (wrappedDescription.length > 3) {
+          if (ctx.measureText(lastLine + '...').width > titleMaxWidth) {
+            let i = lastLine.length
+            while (ctx.measureText(lastLine.slice(0, i) + '...').width > titleMaxWidth) {
+              i--
+            }
+            lastLine = lastLine.slice(0, i) + '...'
+          } else {
+            lastLine = line + '...'
+          }
+        }
+        ctx.fillText(lastLine, styleConfig.layout.descriptionX, styleConfig.layout.descriptionY + i * styleConfig.layout.descriptionLineHeight)
+      }
+    })
+
+    // 加载二维码图片
+    const qrImage = await loadImage(qrCodeDataUrl)
+    const qrX = styleConfig.width - styleConfig.qrSize - styleConfig.layout.qrRightPadding
+    const qrY = styleConfig.layout.qrTopPadding
+    
+    // 绘制二维码背景和边框
+    ctx.save()
+    ctx.fillStyle = styleConfig.qrStyle.light
+    const qrBgSize = styleConfig.qrSize + styleConfig.qrStyle.padding * 2
+    const qrBgX = qrX - styleConfig.qrStyle.padding
+    const qrBgY = qrY - styleConfig.qrStyle.padding
+    // 绘制二维码背景圆角矩形
+    const qrBgRadius = 4
+    ctx.beginPath()
+    ctx.moveTo(qrBgX + qrBgRadius, qrBgY)
+    ctx.lineTo(qrBgX + qrBgSize - qrBgRadius, qrBgY)
+    ctx.quadraticCurveTo(qrBgX + qrBgSize, qrBgY, qrBgX + qrBgSize, qrBgY + qrBgRadius)
+    ctx.lineTo(qrBgX + qrBgSize, qrBgY + qrBgSize - qrBgRadius)
+    ctx.quadraticCurveTo(qrBgX + qrBgSize, qrBgY + qrBgSize, qrBgX + qrBgSize - qrBgRadius, qrBgY + qrBgSize)
+    ctx.lineTo(qrBgX + qrBgRadius, qrBgY + qrBgSize)
+    ctx.quadraticCurveTo(qrBgX, qrBgY + qrBgSize, qrBgX, qrBgY + qrBgSize - qrBgRadius)
+    ctx.lineTo(qrBgX, qrBgY + qrBgRadius)
+    ctx.quadraticCurveTo(qrBgX, qrBgY, qrBgX + qrBgRadius, qrBgY)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+
+    // 绘制二维码
+    ctx.drawImage(qrImage, qrX, qrY, styleConfig.qrSize, styleConfig.qrSize)
+    
+    // 绘制提示文字
+    ctx.font = styleConfig.qrStyle.tipFont
+    ctx.fillStyle = styleConfig.qrStyle.tipColor
+    ctx.textAlign = 'center'
+    ctx.fillText(styleConfig.qrStyle.tipText, 
+                qrX + styleConfig.qrSize / 2, 
+                qrY + styleConfig.qrSize + styleConfig.qrStyle.padding + 14)
+
+    // 恢复裁剪路径
+    ctx.restore()
+
+    // 转换为图片
+    console.log('Converting to image...')
+    const finalImage = await sharp(canvas.toBuffer('image/png'))
+      .png()
+      .toBuffer()
+
+    console.log('Image generation completed')
+    return new NextResponse(finalImage, {
+      headers: {
+        'Content-Type': 'image/png',
+        'X-Page-Title': Buffer.from(title).toString('base64'),
+        'X-Page-Description': Buffer.from(description).toString('base64'),
+      },
+    })
   } catch (error) {
     console.error('Error generating image:', error)
     return NextResponse.json(
