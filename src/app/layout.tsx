@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Link to Image - 链接转图片工具",
+  title: "链图 - 链接转图片工具",
   description: "一个简单易用的工具，可以将任何网页链接转换成包含二维码、网站标题和简介的精美图片。特别适合微信公众号运营者在文章中插入外部链接。",
   icons: {
     icon: '/icon.svg',
@@ -26,16 +26,16 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'Link to Image - 链接转图片工具',
+    title: '链图 - 链接转图片工具',
     description: '一个简单易用的工具，可以将任何网页链接转换成包含二维码、网站标题和简介的精美图片。特别适合微信公众号运营者在文章中插入外部链接。',
     url: 'https://your-domain.com',
-    siteName: 'Link to Image',
+    siteName: '链图',
     locale: 'zh_CN',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Link to Image - 链接转图片工具',
+    title: '链图 - 链接转图片工具',
     description: '一个简单易用的工具，可以将任何网页链接转换成包含二维码、网站标题和简介的精美图片。特别适合微信公众号运营者在文章中插入外部链接。',
     creator: '@your-twitter-handle',
   },
@@ -63,10 +63,10 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <head>
-        <meta name="application-name" content="Link to Image" />
+        <meta name="application-name" content="链图" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Link to Image" />
+        <meta name="apple-mobile-web-app-title" content="链图" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#07C160" />
