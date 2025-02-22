@@ -40,7 +40,8 @@ export default function Home() {
       // 检查域名格式
       const domainPattern = /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
       return domainPattern.test(url.hostname);
-    } catch (_) {
+    } catch (error) {
+      console.error('URL 验证失败:', error)
       return false;
     }
   }
