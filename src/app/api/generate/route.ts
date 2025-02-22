@@ -13,8 +13,8 @@ const STYLE_CONFIGS = {
     background: { r: 255, g: 255, b: 255 },
     titleColor: '#1F2937',
     descriptionColor: '#4B5563',
-    titleFont: '18px "Microsoft YaHei"',
-    descriptionFont: '14px "Microsoft YaHei"',
+    titleFont: '18px "Noto Sans CJK SC"',
+    descriptionFont: '14px "Noto Sans CJK SC"',
     qrSize: 82,
     border: { r: 229, g: 231, b: 235, alpha: 1 },
     qrStyle: {
@@ -24,7 +24,7 @@ const STYLE_CONFIGS = {
       padding: 2,
       tipText: '长按或扫码访问',
       tipColor: '#6B7280',
-      tipFont: '12px "Microsoft YaHei"',
+      tipFont: '12px "Noto Sans CJK SC"',
     },
     layout: {
       titleX: 20,
@@ -43,8 +43,8 @@ const STYLE_CONFIGS = {
     background: { r: 7, g: 193, b: 96 },
     titleColor: '#FFFFFF',
     descriptionColor: 'rgba(255, 255, 255, 0.9)',
-    titleFont: '18px "Microsoft YaHei"',
-    descriptionFont: '14px "Microsoft YaHei"',
+    titleFont: '18px "Noto Sans CJK SC"',
+    descriptionFont: '14px "Noto Sans CJK SC"',
     qrSize: 82,
     border: { r: 7, g: 193, b: 96, alpha: 0 },
     qrStyle: {
@@ -54,7 +54,7 @@ const STYLE_CONFIGS = {
       padding: 2,
       tipText: '长按或扫码访问',
       tipColor: 'rgba(255, 255, 255, 0.9)',
-      tipFont: '12px "Microsoft YaHei"',
+      tipFont: '12px "Noto Sans CJK SC"',
     },
     layout: {
       titleX: 20,

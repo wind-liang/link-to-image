@@ -21,7 +21,11 @@ RUN apk add --no-cache \
     jpeg-dev \
     giflib-dev \
     librsvg-dev \
-    bash
+    bash \
+    fontconfig \
+    ttf-dejavu \
+    font-noto \
+    font-noto-cjk
 
 # 安装依赖
 RUN npm install
