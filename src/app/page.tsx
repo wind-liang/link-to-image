@@ -328,23 +328,38 @@ export default function Home() {
             </div>
           )}
 
-          {imageUrl && (
+          {(loading || imageUrl) && (
             <div className="mt-8">
               <h2 className="text-lg font-medium text-gray-900 mb-4">生成的图片：</h2>
-              <div className="relative bg-gray-50 rounded-lg p-4 sm:p-8 border border-gray-100">
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden mx-auto">
-                  <Image
-                    src={imageUrl}
-                    alt="生成的图片"
-                    width={500}
-                    height={120}
-                    className="w-full h-auto"
-                    style={{
-                      imageRendering: 'crisp-edges',
-                    }}
-                    unoptimized
-                  />
-                </div>
+              <div className="relative bg-gray-50 rounded-lg p-4 sm:p-8 border border-gray-100 min-h-[250px]">
+                {loading ? (
+                  <div className="flex items-center justify-center h-[120px] bg-white rounded-lg shadow-sm">
+                    <div className="animate-pulse flex space-x-4 w-full max-w-[500px] mx-auto p-4">
+                      <div className="flex-1 space-y-4">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div className="space-y-2">
+                          <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                          <div className="h-3 bg-gray-200 rounded w-4/6"></div>
+                        </div>
+                      </div>
+                      <div className="w-[82px] h-[82px] bg-gray-200 rounded-lg"></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden mx-auto">
+                    <Image
+                      src={imageUrl}
+                      alt="生成的图片"
+                      width={500}
+                      height={120}
+                      className="w-full h-auto"
+                      style={{
+                        imageRendering: 'crisp-edges',
+                      }}
+                      unoptimized
+                    />
+                  </div>
+                )}
                 <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
                   <a
                     href={imageUrl}
