@@ -11,6 +11,7 @@ RUN npm config set registry https://registry.npmmirror.com/
 
 # 安装 Python 3 和构建工具
 RUN apk add --no-cache \
+    libc6-compat \
     python3 \
     py3-pip \
     build-base \
