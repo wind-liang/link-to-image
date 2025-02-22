@@ -214,7 +214,7 @@ export default function Home() {
                   }}
                   required
                   placeholder="https://example.com"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors peer"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors peer text-gray-900 placeholder:text-gray-500"
                   onInvalid={(e) => {
                     e.preventDefault();
                     const input = e.target as HTMLInputElement;
@@ -269,7 +269,7 @@ export default function Home() {
                     onChange={(e) => setCustomTitle(e.target.value)}
                     placeholder="不填则使用网页原标题"
                     maxLength={32}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -283,7 +283,7 @@ export default function Home() {
                     placeholder="不填则使用网页原描述"
                     maxLength={150}
                     rows={3}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none text-gray-900 placeholder:text-gray-500"
                   />
                 </div>
               </div>
