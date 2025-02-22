@@ -32,11 +32,11 @@ export default function Home() {
   // 添加 URL 验证函数
   const isValidUrl = (urlString: string) => {
     try {
-      const url = new URL(urlString);
-      // 检查协议
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-        return false;
+      // 如果没有协议，添加 https://
+      if (!urlString.startsWith('http://') && !urlString.startsWith('https://')) {
+        urlString = 'https://' + urlString;
       }
+      const url = new URL(urlString);
       // 检查域名格式
       const domainPattern = /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
       return domainPattern.test(url.hostname);
@@ -51,7 +51,7 @@ export default function Home() {
     
     // 在提交前验证 URL
     if (!isValidUrl(url)) {
-      setError('请输入正确的网页链接格式，例如：https://example.com');
+      setError('请输入正确的网页链接格式，例如：example.com');
       return;
     }
 
@@ -86,11 +86,11 @@ export default function Home() {
       // 如果没有自定义标题和描述，则使用从服务器获取的值
       if (!customTitle && titleHeader) {
         const decodedTitle = Buffer.from(titleHeader, 'base64').toString()
-        setCustomTitle(decodedTitle)
+        setCustomTitle(decodedTitle.slice(0, 40)) // 标题最大长度为 40
       }
       if (!customDescription && descriptionHeader) {
         const decodedDescription = Buffer.from(descriptionHeader, 'base64').toString()
-        setCustomDescription(decodedDescription)
+        setCustomDescription(decodedDescription.slice(0, 150)) // 描述最大长度为 150
       }
 
       const blob = await response.blob()
@@ -201,7 +201,7 @@ export default function Home() {
               </label>
               <div className="space-y-2">
                 <input
-                  type="url"
+                  type="text"
                   id="url"
                   value={url}
                   onChange={(e) => {
@@ -213,7 +213,7 @@ export default function Home() {
                     setCustomDescription('');
                   }}
                   required
-                  placeholder="https://example.com"
+                  placeholder="example.com"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors peer text-gray-900 placeholder:text-gray-500"
                   onInvalid={(e) => {
                     e.preventDefault();
@@ -221,7 +221,7 @@ export default function Home() {
                     if (input.validity.valueMissing) {
                       input.setCustomValidity('请输入网页链接');
                     } else if (input.validity.typeMismatch || !isValidUrl(input.value)) {
-                      input.setCustomValidity('请输入正确的网页链接格式，例如：https://example.com');
+                      input.setCustomValidity('请输入正确的网页链接格式，例如：example.com');
                     }
                   }}
                   onInput={(e) => {
@@ -230,10 +230,10 @@ export default function Home() {
                   }}
                 />
                 <p className="text-sm text-gray-500">
-                  请输入以 https:// 或 http:// 开头的网页链接
+                  例如：example.com 或 https://example.com
                 </p>
                 <p className="text-sm text-red-600 hidden peer-[&:not(:placeholder-shown):invalid]:block">
-                  请输入正确的网页链接格式，例如：https://example.com
+                  请输入正确的网页链接格式，例如：example.com
                 </p>
               </div>
             </div>
@@ -268,7 +268,7 @@ export default function Home() {
                     value={customTitle}
                     onChange={(e) => setCustomTitle(e.target.value)}
                     placeholder="不填则使用网页原标题"
-                    maxLength={32}
+                    maxLength={40}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 placeholder:text-gray-500"
                   />
                 </div>

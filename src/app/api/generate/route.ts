@@ -102,7 +102,9 @@ async function getPageInfo(url: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, style = 'modern', customTitle, customDescription } = await request.json()
+    const body = await request.json()
+    const { style = 'modern', customTitle, customDescription } = body
+    let { url } = body
     console.log('Received URL:', url, 'Style:', style)
 
     if (!url) {
@@ -115,14 +117,11 @@ export async function POST(request: NextRequest) {
 
     // 验证 URL 格式
     try {
-      const urlObj = new URL(url);
-      // 检查协议
-      if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
-        return NextResponse.json(
-          { error: '请输入正确的网页链接格式，例如：https://example.com' },
-          { status: 400 }
-        )
+      // 如果没有协议，添加 https://
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
       }
+      const urlObj = new URL(url);
       // 检查域名格式
       const domainPattern = /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
       if (!domainPattern.test(urlObj.hostname)) {
@@ -133,7 +132,7 @@ export async function POST(request: NextRequest) {
       }
     } catch {
       return NextResponse.json(
-        { error: '请输入正确的网页链接格式，例如：https://example.com' },
+        { error: '请输入正确的网页链接格式，例如：example.com' },
         { status: 400 }
       )
     }
