@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import QRCode from 'qrcode'
 import sharp from 'sharp'
-import { createCanvas } from 'canvas'
+import { createCanvas, registerFont } from 'canvas'
 import { loadImage } from 'canvas'
 import * as cheerio from 'cheerio'
+import path from 'path'
+
+// 注册字体
+registerFont(path.join(process.cwd(), 'public/fonts/NotoSansCJKsc-Regular.otf'), {
+  family: 'Noto Sans CJK SC'
+})
 
 // 定义样式配置
 const STYLE_CONFIGS = {
