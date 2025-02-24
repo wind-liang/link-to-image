@@ -81,20 +81,52 @@ async function getPageInfo(url: string) {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      // 允许 HTTP 请求
+      next: {
+        revalidate: 0
       }
     });
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      console.error(`HTTP error! status: ${response.status}`);
+      return {
+        title: '未能访问的网页',
+        description: '该网页暂时无法访问，您可以点击上方的"自定义标题和描述"来编辑显示内容'
+      };
     }
     
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('text/html')) {
+      console.error('非 HTML 内容:', contentType);
+      return {
+        title: '不支持的网页类型',
+        description: '该链接不是一个网页，您可以点击上方的"自定义标题和描述"来编辑显示内容'
+      };
+    }
+
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    const title = $('title').text() || '未能获取网页标题';
-    const description = $('meta[name="description"]').attr('content') || 
-                       $('meta[property="og:description"]').attr('content') || 
-                       '未能获取网页描述';
+    let title = $('title').text().trim();
+    let description = $('meta[name="description"]').attr('content')?.trim() || 
+                     $('meta[property="og:description"]').attr('content')?.trim();
+
+    // 如果标题为空，尝试其他常见标题标签
+    if (!title) {
+      title = $('meta[property="og:title"]').attr('content')?.trim() ||
+              $('h1').first().text().trim() ||
+              '未能获取网页标题';
+    }
+
+    // 如果描述为空，尝试获取第一段文字
+    if (!description) {
+      description = $('p').first().text().trim() || '未能获取网页描述';
+    }
+
+    // 限制长度
+    title = title.slice(0, 40);
+    description = description.slice(0, 150);
     
     return { title, description };
   } catch (error) {

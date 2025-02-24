@@ -74,9 +74,22 @@ export default function Home() {
         }),
       })
 
+      // 检查响应的 Content-Type
+      const contentType = response.headers.get('content-type');
+      
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || '生成图片时出错')
+        if (contentType?.includes('application/json')) {
+          const data = await response.json();
+          throw new Error(data.error || '生成图片时出错');
+        } else {
+          const text = await response.text();
+          console.error('非 JSON 错误响应:', text);
+          throw new Error('生成图片时出错，请检查网页是否可访问');
+        }
+      }
+
+      if (!contentType?.includes('image/')) {
+        throw new Error('服务器返回了错误的内容类型');
       }
 
       // 获取标题和描述
@@ -97,6 +110,7 @@ export default function Home() {
       const objectUrl = URL.createObjectURL(blob)
       setImageUrl(objectUrl)
     } catch (err) {
+      console.error('生成图片错误:', err);
       setError(err instanceof Error ? err.message : '生成图片时出错')
     } finally {
       setLoading(false)
