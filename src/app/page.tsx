@@ -227,7 +227,7 @@ export default function Home() {
                     setCustomDescription('');
                   }}
                   required
-                  placeholder="example.com"
+                  placeholder="https://example.com"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors peer text-gray-900 placeholder:text-gray-500"
                   onInvalid={(e) => {
                     e.preventDefault();
@@ -244,7 +244,7 @@ export default function Home() {
                   }}
                 />
                 <p className="text-sm text-gray-500">
-                  例如：example.com 或 https://example.com
+                  例如：http://example.com 或 https://example.com 或 example.com（默认添加 https 协议头）
                 </p>
                 <p className="text-sm text-red-600 hidden peer-[&:not(:placeholder-shown):invalid]:block">
                   请输入正确的网页链接格式，例如：example.com
