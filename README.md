@@ -6,7 +6,7 @@
 
 如果觉得这个项目对你有帮助，欢迎给个 star ⭐️
 
-> 本项目由 [Cursor](https://cursor.sh/) AI 辅助编码完成
+> 本项目由 [Cursor](https://cursor.sh/) AI 辅助编码完成，[开发过程记录](https://mp.weixin.qq.com/s/IjOe7asSVSmyg42iY-tbkw)。
 
 ## 功能特点
 
