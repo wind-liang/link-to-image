@@ -163,8 +163,36 @@ export async function POST(request: NextRequest) {
         url = 'https://' + url;
       }
       const urlObj = new URL(url);
+      
+      // 检查是否是 IP 地址
+      const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+      const ipv6Pattern = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+      
       // 检查域名格式
       const domainPattern = /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+      
+      // 如果是 IP 地址，验证每个数字是否在 0-255 之间
+      if (ipv4Pattern.test(urlObj.hostname)) {
+        const parts = urlObj.hostname.split('.');
+        const isValidIp = parts.every(part => {
+          const num = parseInt(part, 10);
+          return num >= 0 && num <= 255;
+        });
+        if (!isValidIp) {
+          return NextResponse.json(
+            { error: '请输入有效的 IP 地址，每个数字应在 0-255 之间' },
+            { status: 400 }
+          )
+        }
+        return;
+      }
+      
+      // 如果是 IPv6 地址
+      if (ipv6Pattern.test(urlObj.hostname)) {
+        return;
+      }
+      
+      // 如果是域名但格式不正确
       if (!domainPattern.test(urlObj.hostname)) {
         return NextResponse.json(
           { error: '请输入有效的网页链接，域名格式不正确' },
@@ -173,7 +201,7 @@ export async function POST(request: NextRequest) {
       }
     } catch {
       return NextResponse.json(
-        { error: '请输入正确的网页链接格式，例如：example.com' },
+        { error: '请输入正确的网页链接格式，例如：example.com 或 192.168.1.1:8080' },
         { status: 400 }
       )
     }

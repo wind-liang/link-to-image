@@ -37,8 +37,29 @@ export default function Home() {
         urlString = 'https://' + urlString;
       }
       const url = new URL(urlString);
+      
+      // 检查是否是 IP 地址
+      const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+      const ipv6Pattern = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+      
       // 检查域名格式
       const domainPattern = /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+      
+      // 如果是 IP 地址，验证每个数字是否在 0-255 之间
+      if (ipv4Pattern.test(url.hostname)) {
+        const parts = url.hostname.split('.');
+        return parts.every(part => {
+          const num = parseInt(part, 10);
+          return num >= 0 && num <= 255;
+        });
+      }
+      
+      // 如果是 IPv6 地址
+      if (ipv6Pattern.test(url.hostname)) {
+        return true;
+      }
+      
+      // 如果是域名
       return domainPattern.test(url.hostname);
     } catch (error) {
       console.error('URL 验证失败:', error)
@@ -51,7 +72,7 @@ export default function Home() {
     
     // 在提交前验证 URL
     if (!isValidUrl(url)) {
-      setError('请输入正确的网页链接格式，例如：example.com');
+      setError('请输入正确的网页链接格式，例如：example.com 或 192.168.1.1:8080');
       return;
     }
 
@@ -235,7 +256,7 @@ export default function Home() {
                     if (input.validity.valueMissing) {
                       input.setCustomValidity('请输入网页链接');
                     } else if (input.validity.typeMismatch || !isValidUrl(input.value)) {
-                      input.setCustomValidity('请输入正确的网页链接格式，例如：example.com');
+                      input.setCustomValidity('请输入正确的网页链接格式，例如：example.com 或 192.168.1.1:8080');
                     }
                   }}
                   onInput={(e) => {
@@ -244,10 +265,10 @@ export default function Home() {
                   }}
                 />
                 <p className="text-sm text-gray-500">
-                  例如：http://example.com 或 https://example.com 或 example.com（默认添加 https 协议头）
+                  例如：http://example.com 或 https://example.com 或 example.com 或 192.168.1.1:8080（默认添加 https 协议头）
                 </p>
                 <p className="text-sm text-red-600 hidden peer-[&:not(:placeholder-shown):invalid]:block">
-                  请输入正确的网页链接格式，例如：example.com
+                  请输入正确的网页链接格式，例如：example.com 或 192.168.1.1:8080
                 </p>
               </div>
             </div>
