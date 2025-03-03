@@ -61,8 +61,8 @@ export default function Home() {
       
       // 如果是域名
       return domainPattern.test(url.hostname);
-    } catch (error) {
-      console.error('URL 验证失败:', error)
+    } catch (e) {
+      console.log('URL 验证失败:', e)
       return false;
     }
   }
