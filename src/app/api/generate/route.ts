@@ -239,8 +239,8 @@ export async function POST(request: NextRequest) {
     // 创建主画布
     console.log('Creating main canvas...')
     // 为边框预留空间
-    const canvasWidth = style === 'white' ? styleConfig.width * scale + 2 : styleConfig.width * scale
-    const canvasHeight = style === 'white' ? styleConfig.height * scale + 2 : styleConfig.height * scale
+    const canvasWidth = styleConfig.width * scale
+    const canvasHeight = styleConfig.height * scale
     const canvas = createCanvas(canvasWidth, canvasHeight)
     const ctx = canvas.getContext('2d')
     
@@ -249,11 +249,6 @@ export async function POST(request: NextRequest) {
     
     // 启用字体平滑
     ctx.imageSmoothingEnabled = true
-    
-    // 如果是白色风格，先平移画布以预留边框空间
-    if (style === 'white') {
-      ctx.translate(1/scale, 1/scale)
-    }
     
     // 绘制背景和边框
     const radius = 6 // 更自然的圆角大小
@@ -269,6 +264,10 @@ export async function POST(request: NextRequest) {
     ctx.quadraticCurveTo(0, 0, radius, 0)
     ctx.closePath()
 
+    // 填充背景色
+    ctx.fillStyle = `rgb(${styleConfig.background.r}, ${styleConfig.background.g}, ${styleConfig.background.b})`
+    ctx.fill()
+    
     // 如果是白色风格，绘制边框
     if (style === 'white') {
       ctx.save()
@@ -278,10 +277,6 @@ export async function POST(request: NextRequest) {
       ctx.restore()
     }
 
-    // 填充背景色
-    ctx.fillStyle = `rgb(${styleConfig.background.r}, ${styleConfig.background.g}, ${styleConfig.background.b})`
-    ctx.fill()
-    
     // 创建裁剪路径
     ctx.save()
     ctx.clip()
