@@ -6,6 +6,9 @@ import { loadImage } from 'canvas'
 import * as cheerio from 'cheerio'
 import path from 'path'
 
+// 设置 API 路由超时时间为 5 秒
+export const maxDuration = 5
+
 // 注册字体
 registerFont(path.join(process.cwd(), 'public/fonts/NotoSansCJKsc-Regular.otf'), {
   family: 'Noto Sans CJK SC'
