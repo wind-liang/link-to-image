@@ -6,8 +6,6 @@ import { loadImage } from 'canvas'
 import * as cheerio from 'cheerio'
 import path from 'path'
 
-// 设置 API 路由超时时间为 5 秒
-export const maxDuration = 5
 
 // 注册字体
 registerFont(path.join(process.cwd(), 'public/fonts/NotoSansCJKsc-Regular.otf'), {
@@ -81,6 +79,9 @@ const STYLE_CONFIGS = {
 // 获取网页信息的函数
 async function getPageInfo(url: string) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超时
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -88,8 +89,11 @@ async function getPageInfo(url: string) {
       // 允许 HTTP 请求
       next: {
         revalidate: 0
-      }
+      },
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId); // 清除超时计时器
     
     if (!response.ok) {
       console.error(`HTTP error! status: ${response.status}`);
@@ -134,9 +138,13 @@ async function getPageInfo(url: string) {
     return { title, description };
   } catch (error) {
     console.error('Error fetching page info:', error);
+    const message = error instanceof Error && error.name === 'AbortError' 
+      ? '网页访问超时（5秒），您可以点击上方的"自定义标题和描述"来编辑显示内容'
+      : '该网页暂时无法访问，您可以点击上方的"自定义标题和描述"来编辑显示内容';
+    
     return {
       title: '未能访问的网页',
-      description: '该网页暂时无法访问，您可以点击上方的"自定义标题和描述"来编辑显示内容'
+      description: message
     };
   }
 }
@@ -184,16 +192,13 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           )
         }
-        return;
       }
       
-      // 如果是 IPv6 地址
-      if (ipv6Pattern.test(urlObj.hostname)) {
-        return;
-      }
       
       // 如果是域名但格式不正确
-      if (!domainPattern.test(urlObj.hostname)) {
+      if (!ipv4Pattern.test(urlObj.hostname) && 
+          !ipv6Pattern.test(urlObj.hostname) && 
+          !domainPattern.test(urlObj.hostname)) {
         return NextResponse.json(
           { error: '请输入有效的网页链接，域名格式不正确' },
           { status: 400 }
